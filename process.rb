@@ -31,7 +31,7 @@ end
 inventory = []
 
 def print_inventory(inventory)
-  CSV.open('tmp.csv', 'wb', encoding: 'utf-8:ISO8859-1') do |csv|
+  CSV.open('tmp.csv', 'wb', encoding: 'utf-8', col_sep: ';') do |csv|
     csv << [
       'ProductCategory',
       'ProductCode',
