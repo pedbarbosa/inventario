@@ -33,26 +33,46 @@ inventory = []
 def print_inventory(inventory)
   CSV.open('tmp.csv', 'wb', encoding: 'utf-8:ISO8859-1') do |csv|
     csv << [
-      'Fornecedor',
-      'Ref Item',
-      'Nº Doc.',
-      'Descrição',
-      'Entrada',
-      's/ IVA',
-      'c/ IVA',
-      'Linha'
+      'ProductCategory',
+      'ProductCode',
+      'ProductDescription',
+      'ProductNumberCode',
+      'ClosingStockQuantity',
+      'Unit of Measure',
+      'Preço unitário',
+      'valor'
     ]
+    # csv << [
+    #   'Fornecedor',
+    #   'Ref Item',
+    #   'Nº Doc.',
+    #   'Descrição',
+    #   'Entrada',
+    #   's/ IVA',
+    #   'c/ IVA',
+    #   'Linha'
+    # ]
     inventory.each do |hash|
       csv << [
-        hash['Fornecedor'],
-        hash['Ref Item'] || hash['Referência'],
-        hash['Nº Doc.'],
+        'M',
         hash['Descrição'],
-        hash['Entrada'] || hash['Data'],
+        hash['Descrição'],
+        hash['Descrição'],
+        1,
+        'UN',
         hash['s/ IVA'],
-        hash['c/ IVA'],
-        hash['Linha']
+        hash['s/ IVA']
       ]
+      # [
+      #   hash['Fornecedor'],
+      #   hash['Ref Item'] || hash['Referência'],
+      #   hash['Nº Doc.'],
+      #   hash['Descrição'],
+      #   hash['Entrada'] || hash['Data'],
+      #   hash['s/ IVA'],
+      #   hash['c/ IVA'],
+      #   hash['Linha']
+      # ]
     end
   end
 end
