@@ -4,10 +4,19 @@
 require 'csv'
 require 'spreadsheet'
 
-# Note: spreadsheet only supports .xls files (not .xlsx)
-workbook = Spreadsheet.open './inv.xls'
+SPREADSHEET_FILENAME = './inventario.xls'
+CSV_OUTPUT = 'inventario.csv'
+
+unless File.exist?(SPREADSHEET_FILENAME)
+  puts "Expected file '#{SPREADSHEET_FILENAME}' but it wasn't found.
+NOTE: This program only supports .xls files. If you have an .xlsx file, convert it in Excel first."
+  exit 1
+end
+
+workbook = Spreadsheet.open SPREADSHEET_FILENAME
+puts "Processing '#{SPREADSHEET_FILENAME}' ..."
 worksheets = workbook.worksheets
-puts "Found #{worksheets.count} worksheets"
+puts "Found #{worksheets.count} worksheets."
 
 def find_headers(worksheet)
   headers = ['Fornecedor']
@@ -24,14 +33,36 @@ def define_state(colour)
   colour != :border
 end
 
+def before_tax_a_value?(hash)
+  !hash['s/ IVA'].is_a? Numeric
+end
+
+def description_a_title?(hash)
+  hash['Descrição'] =~ /TOTAL|Total|Portes|Desconto|Diversos/
+end
+
+def field_matches_subtotal?(field)
+  return false if field.is_a? Float
+
+  field =~ /Contab.*/
+end
+
 def skip_conditions(hash)
-  (!hash['s/ IVA'].is_a? Numeric) || hash['Descrição'] =~ /TOTAL|Total|Portes|Desconto|Diversos/ || hash['c/ IVA'] =~ /Contab.*/ || hash['Observações'] =~ /Contab.*/
+  return true if before_tax_a_value?(hash)
+
+  return true if description_a_title?(hash)
+
+  return true if field_matches_subtotal?(hash['c/ IVA'])
+
+  return true if field_matches_subtotal?(hash['Observações'])
+
+  false
 end
 
 inventory = []
 
-def print_inventory(inventory)
-  CSV.open('tmp.csv', 'wb', encoding: 'utf-8', col_sep: ';') do |csv|
+def accounting_inventory(inventory)
+  CSV.open(CSV_OUTPUT, 'wb', encoding: 'utf-8', col_sep: ';') do |csv|
     csv << [
       'ProductCategory',
       'ProductCode',
@@ -42,16 +73,6 @@ def print_inventory(inventory)
       'Preço unitário',
       'valor'
     ]
-    # csv << [
-    #   'Fornecedor',
-    #   'Ref Item',
-    #   'Nº Doc.',
-    #   'Descrição',
-    #   'Entrada',
-    #   's/ IVA',
-    #   'c/ IVA',
-    #   'Linha'
-    # ]
     inventory.each do |hash|
       csv << [
         'M',
@@ -63,16 +84,33 @@ def print_inventory(inventory)
         hash['s/ IVA'],
         hash['s/ IVA']
       ]
-      # [
-      #   hash['Fornecedor'],
-      #   hash['Ref Item'] || hash['Referência'],
-      #   hash['Nº Doc.'],
-      #   hash['Descrição'],
-      #   hash['Entrada'] || hash['Data'],
-      #   hash['s/ IVA'],
-      #   hash['c/ IVA'],
-      #   hash['Linha']
-      # ]
+    end
+  end
+end
+
+def normal_inventory(inventory)
+  CSV.open(CSV_OUTPUT, 'wb', encoding: 'utf-8', col_sep: ';') do |csv|
+    csv << [
+      'Fornecedor',
+      'Ref Item',
+      'Nº Doc.',
+      'Descrição',
+      'Entrada',
+      's/ IVA',
+      'c/ IVA',
+      'Linha'
+    ]
+    inventory.each do |hash|
+      csv << [
+        hash['Fornecedor'],
+        hash['Ref Item'] || hash['Referência'],
+        hash['Nº Doc.'],
+        hash['Descrição'],
+        hash['Entrada'] || hash['Data'],
+        hash['s/ IVA'],
+        hash['c/ IVA'],
+        hash['Linha']
+      ]
     end
   end
 end
@@ -106,4 +144,5 @@ worksheets.each do |worksheet|
   end
 end
 
-print_inventory(inventory)
+puts "Writing output to '#{CSV_OUTPUT}' ..."
+accounting_inventory(inventory)

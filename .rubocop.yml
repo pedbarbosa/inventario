@@ -1,5 +1,8 @@
 require: rubocop-performance
 
+AllCops:
+  NewCops: enable
+
 Layout/LineLength:
   Max: 170
 
